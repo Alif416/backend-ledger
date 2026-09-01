@@ -1,16 +1,10 @@
-const express = require('express');
+const express = require("express");
+const authController = require("../controllers/auth.controller");
+const asyncHandler = require("../middlewares/asyncHandler");
+
 const router = express.Router();
 
-
-const authController = require("../controllers/auth.controllers");
-
-// api/auth/register
-
-router.post('/register', authController.userRegisterController);
-
-// api/auth/login
-
-router.post('/login', authController.userLoginController);
-
+router.post("/register", asyncHandler(authController.register.bind(authController)));
+router.post("/login", asyncHandler(authController.login.bind(authController)));
 
 module.exports = router;
