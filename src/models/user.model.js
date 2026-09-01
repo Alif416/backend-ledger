@@ -1,47 +1,55 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema({
-    email:{
-        type:String,
-        required:[true,"Email is required for creating an account"],
-        trim:true,
-        lowercase:true,
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,"Please fill a valid email address"],
-        unique:true
+const SALT_ROUNDS = 10;
+
+const userSchema = new mongoose.Schema(
+    {
+        email: {
+            type: String,
+            required: [true, "Email is required for creating an account"],
+            trim: true,
+            lowercase: true,
+            match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please fill a valid email address"],
+            unique: true,
+        },
+        name: {
+            type: String,
+            required: [true, "Name is required for creating an account"],
+            trim: true,
+        },
+        password: {
+            type: String,
+            required: [true, "Password is required for creating an account"],
+            trim: true,
+            minlength: [6, "Password must be at least 6 characters long"],
+            select: false,
+        },
     },
-    name:{
-        type:String,
-        required:[true,"Name is required for creating an account"],
-        trim:true,  
-
-    },
-    password:{
-        type:String,
-        required:[true,"Password is required for creating an account"],
-        trim:true,
-        minlength:[6,"Password must be at least 6 characters long"],
-        select:false
+    {
+        timestamps: true,
     }
+);
 
-},{
-    timestamps:true
-})
-
-userSchema.pre('save',async function(){
-    if(!this.isModified('password')){
-        return 
+userSchema.pre("save", async function hashPassword() {
+    if (!this.isModified("password")) {
+        return;
     }
-    const hash= await bcrypt.hash(this.password,10);
-    this.password=hash;
+    this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+});
 
-})
+userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
+userSchema.methods.toPublicJSON = function toPublicJSON() {
+    return {
+        id: this._id,
+        email: this.email,
+        name: this.name,
+    };
+};
 
-userSchema.methods.comparePassword=async function(password){
-    return await bcrypt.compare(password,this.password);
-}
+const UserModel = mongoose.model("User", userSchema);
 
-const userModel=mongoose.model('User',userSchema);
-
-module.exports=userModel;
+module.exports = UserModel;

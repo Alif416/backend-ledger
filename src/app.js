@@ -1,15 +1,29 @@
-// 1. crete server instance also for server configuration we need to import the express module
-
 const express = require("express");
-const cookieParser=require("cookie-parser");
-const authRouter=require('./routes/auth.routes')
-const app=express();
+const cookieParser = require("cookie-parser");
+const authRouter = require("./routes/auth.routes");
+const errorMiddleware = require("./middlewares/error.middleware");
 
-app.use(express.json());
-app.use(cookieParser());
+class App {
+    constructor() {
+        this.instance = express();
+        this.#registerMiddlewares();
+        this.#registerRoutes();
+        this.#registerErrorHandler();
+    }
 
+    #registerMiddlewares() {
+        this.instance.use(express.json());
+        this.instance.use(cookieParser());
+    }
 
+    #registerRoutes() {
+        this.instance.use("/api/auth", authRouter);
+    }
 
-app.use('/api/auth',authRouter)
+    #registerErrorHandler() {
+        // must be registered last so it catches errors from all routes above
+        this.instance.use(errorMiddleware);
+    }
+}
 
-module.exports=app;
+module.exports = new App().instance;
